@@ -1,21 +1,6 @@
 import os
 from PySide6.QtCore import Qt, QAbstractTableModel
 from PySide6.QtWidgets import QApplication, QWidget, QStackedWidget, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, \
-<<<<<<< HEAD
-    QTextEdit, QTableView, QGraphicsView, QFileDialog, QGraphicsScene
-
-from qfluentwidgets import Pivot, setTheme, Theme, SegmentedWidget, FluentIcon, PushButton
-import algorithm.dataanalysisalgo as algo
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-
-
-class DataVisualizerPage(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.vBoxLayout = QVBoxLayout(self)
-
-=======
     QTextEdit, QTableView, QGraphicsView, QFileDialog, QGraphicsScene, QMessageBox, QComboBox
 
 from qfluentwidgets import Pivot, setTheme, Theme, SegmentedWidget, FluentIcon, PushButton,ComboBox,InfoBar,InfoBarPosition
@@ -638,4 +623,3 @@ class MplCanvas(FigureCanvasQTAgg):
         fig = plt.Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)  # 添加子图
         super(MplCanvas, self).__init__(fig)
->>>>>>> 5e7640a (version-1.1)

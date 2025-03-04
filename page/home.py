@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-from PySide6.QtWidgets import QApplication, QFrame, QStackedWidget, QHBoxLayout, QLabel
-from PySide6.QtCore import Qt, QRect, QUrl
-
-
-class HomePage(QFrame):
-    def __init__(self, text: str, parent=None):
-        super().__init__(parent=parent)
-        self.label = QLabel(text, self)
-        self.label.setAlignment(Qt.AlignCenter)
-        self.hBoxLayout = QHBoxLayout(self)
-        self.hBoxLayout.addWidget(self.label, 1, Qt.AlignCenter)
-        self.setObjectName(text.replace(' ', '-'))
-=======
 from PySide6.QtWidgets import (QFrame, QLabel, QVBoxLayout, QHBoxLayout, 
                               QWidget, QSpacerItem, QSizePolicy, QGridLayout)
 from qfluentwidgets import IconWidget, TextWrap, FlowLayout, CardWidget
@@ -217,4 +203,3 @@ class HomePage(QFrame):
         footer_layout.addWidget(copyright)
         footer_layout.addWidget(version)
         layout.addWidget(footer)
->>>>>>> 5e7640a (version-1.1)

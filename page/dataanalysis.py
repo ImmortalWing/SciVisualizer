@@ -10,14 +10,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 
 
 class DataAnalysisPage(QWidget):
-<<<<<<< HEAD
-    def __init__(self):
-        super().__init__()
-=======
     def __init__(self, text: str, parent=None):
         super().__init__(parent=parent)
         self.setObjectName(text.replace(' ', '-'))
->>>>>>> 5e7640a (version-1.1)
         self.setStyleSheet("""
             Demo{background: white}
             QLabel{
@@ -105,11 +100,7 @@ class Page0(QWidget):
 
     def readfile(self):
         self.fname = QFileDialog.getOpenFileName(self, 'Open file', './data')
-<<<<<<< HEAD
-        self.filepathlabel_1.setText("文件路径：" + self.fname[0])
-=======
         self.filepathlabel_1.setText(f"文件路径：{self.fname[0]}" )
->>>>>>> 5e7640a (version-1.1)
         self.df = algo.readfile(self.fname[0])
         pandasmodel = pandasModel(self.df)
         self.tableView.setModel(pandasmodel)

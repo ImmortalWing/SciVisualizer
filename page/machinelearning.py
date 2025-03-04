@@ -1,18 +1,3 @@
-<<<<<<< HEAD
-from PySide6.QtWidgets import QApplication, QFrame, QStackedWidget, QHBoxLayout, QLabel
-from PySide6.QtCore import Qt, QRect, QUrl
-
-
-class MachineLearningPage(QFrame):
-    def __init__(self, text: str, parent=None):
-        super().__init__(parent=parent)
-        self.label = QLabel(text, self)
-        self.label.setAlignment(Qt.AlignCenter)
-        self.hBoxLayout = QHBoxLayout(self)
-        self.hBoxLayout.addWidget(self.label, 1, Qt.AlignCenter)
-        self.setObjectName(text.replace(' ', '-'))
-
-=======
 from PySide6.QtWidgets import (QFrame, QLabel, QVBoxLayout, QHBoxLayout,
                               QWidget, QSpacerItem, QSizePolicy)
 from qfluentwidgets import IconWidget, TextWrap, FlowLayout, CardWidget
@@ -193,4 +178,3 @@ class MachineLearningPage(QFrame):
         h_layout.addLayout(algo_col)
         h_layout.addLayout(framework_col)
         layout.addWidget(intro_widget)
->>>>>>> 5e7640a (version-1.1)

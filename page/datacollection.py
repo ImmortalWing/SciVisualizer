@@ -1,14 +1,4 @@
 import os
-<<<<<<< HEAD
-from PySide6.QtCore import Qt, QAbstractTableModel
-from PySide6.QtWidgets import QApplication, QWidget, QStackedWidget, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, \
-    QTextEdit, QTableView, QGraphicsView, QFileDialog, QGraphicsScene
-
-from qfluentwidgets import Pivot, setTheme, Theme, SegmentedWidget, FluentIcon, PushButton
-import algorithm.dataanalysisalgo as algo
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-=======
 import cv2
 import numpy as np
 from PySide6.QtCore import Qt, QAbstractTableModel
@@ -24,16 +14,10 @@ from algorithm.crack_quantification import CrackQuantification
 import algorithm.crackidentificationalgo as crack_algo
 import platform
 import subprocess
->>>>>>> 5e7640a (version-1.1)
 
 # 极限学习机
 class DataCollectionPage(QWidget):
     def __init__(self, text: str, parent=None):
-<<<<<<< HEAD
-        super().__init__(parent=parent)
-        self.hBoxLayout = QHBoxLayout(self)
-        self.setObjectName(text.replace(' ', '-'))
-=======
         # 初始化裂隙量化分析器
         super().__init__(parent=parent)
         self.crack_analyzer = CrackQuantification()
@@ -563,4 +547,3 @@ class DataCollectionPage(QWidget):
         """显示命令栏"""
         pass
     
->>>>>>> 5e7640a (version-1.1)
