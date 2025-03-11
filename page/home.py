@@ -36,7 +36,6 @@ STYLESHEET = """
         background: qradialgradient(
             cx:0.5, cy:0.5, radius: 0.5,
             fx:0.5, fy:0.5,
-            stop:0 #3a7afe33, stop:1 #3a7afe11
         );
         border-radius: 20px;
         padding: 15px;
@@ -140,7 +139,7 @@ class HomePage(QFrame):
         logo.setObjectName("logoLabel")
         pixmap = QPixmap("resource/logo.png")
         if not pixmap.isNull():
-            logo.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+            logo.setPixmap(pixmap.scaled(200, 200, Qt.KeepAspectRatio))
         else:
             logo.setText("SciVisualizer")
         logo_layout.addWidget(logo)
@@ -157,7 +156,7 @@ class HomePage(QFrame):
     def create_features(self, layout):
         """创建网格布局功能区域"""
         features = [
-            {"title": "数据可视化", "desc": "支持折线图、热力图、3D曲面等15+图表类型"},
+            {"title": "数据可视化", "desc": "支持折线图、热力图、3D曲面等5+图表类型"},
             {"title": "机器学习", "desc": "集成分类、回归、聚类等经典算法"},
             {"title": "深度学习", "desc": "神经网络训练与可视化分析"},
             {"title": "数据分析", "desc": "数据清洗、统计建模与报告生成"}

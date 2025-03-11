@@ -145,8 +145,8 @@ class Window(FramelessWindow):
 
         # 自适应屏幕尺寸
         screen = QApplication.primaryScreen().availableGeometry()
-        window_width = min(1920, screen.width() - 100)
-        window_height = min(1080, screen.height() - 100)
+        window_width = min(1080, screen.width() - 100)
+        window_height = min(720, screen.height() - 100)
         self.resize(window_width, window_height)
         
         # 居中显示

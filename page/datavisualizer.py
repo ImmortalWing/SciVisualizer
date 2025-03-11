@@ -160,7 +160,7 @@ class BasePage(QWidget):
     
     def import_csv(self):
         """导入CSV文件"""
-        file_path, _ = QFileDialog.getOpenFileName(self, "选择CSV文件", "", "CSV Files (*.csv)")
+        file_path, _ = QFileDialog.getOpenFileName(self, "选择CSV文件", "data", "CSV Files (*.csv)")
         if file_path:
             try:
                 self.df = pd.read_csv(file_path)

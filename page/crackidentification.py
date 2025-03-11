@@ -2,7 +2,7 @@ import os
 from PySide6.QtCore import Qt, QAbstractTableModel, QSize
 from PySide6.QtWidgets import QApplication, QWidget, QStackedWidget, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, \
     QTextEdit, QTableView, QGraphicsView, QFileDialog, QGraphicsScene, QFrame
-import algorithm.crackidentificationalgo as crack_algo
+import algorithm.crackidentificationalgonosk as crack_algo
 from PySide6.QtGui import QFont, QPixmap
 from qfluentwidgets import Pivot, setTheme, Theme, SegmentedWidget, FluentIcon, PushButton, Action, ImageLabel, CommandBarView, FlyoutAnimationType, Flyout, \
     InfoBar, InfoBarPosition, StateToolTip, CardWidget, SubtitleLabel, BodyLabel, IconWidget, TransparentToolButton, \
@@ -304,7 +304,7 @@ class CrackIdentificationPage(QWidget):
 
         try:
             # 调用算法处理
-            output_path = crack_algo.crackidentification(self.input_image_path)
+            output_path = crack_algo.crackidentification_nosk(self.input_image_path)
 
             # 显示处理结果
             if os.path.exists(output_path):

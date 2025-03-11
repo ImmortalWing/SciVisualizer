@@ -13,39 +13,6 @@ import os
 import time
 
 
-<<<<<<< HEAD
-class Exp:
-    def __init__(self):
-        super(Exp, self).__init__()
-        #self.data_path = '数据/wind_dataset.csv'
-        self.data_path = 'data/Aquifer_Petrignano.csv'
-        self.timestep = 60  # 时间步长，就是利用多少时间窗口
-        self.batch_size = 64  # 批次大小
-        self.feature_size = 5
-        self.hidden_size = 512  # 隐层大小
-        self.output_size = 30
-        self.num_layers = 2  # lstm的层数
-        self.dropout = 0.3  # 丢弃率
-        self.epochs = 80  # 迭代轮数
-        self.learning_rate = 0.0005  # 学习率
-        self.model = None
-        self.model_name = 'null'  # 模型名称
-        self.save_path = 'algorithm/deeplearning/result/model/{}.pth'.format(self.model_name)  # 最优模型保存路径
-        self.plotsize = 500
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-        self.scale = CustomMinMaxScaler()
-        self.predata = 1  # 预测值在第几列
-        self.patience = 50  # 耐心值
-        self.dilation = 5
-        self.out_channel = 32
-        self.kernel_size = 7
-
-        self.num_channels = [128, 64, 32]
-        self.num_heads = 4
-        self.time = time.time()
-
-=======
 from dataclasses import dataclass,field
 from typing import List
 
@@ -103,24 +70,11 @@ class Exp:
         os.makedirs(f"{self.config.result_root}/pre&loss", exist_ok=True)
         self.save_path = f"{self.config.model_root}/{self.model_name}.pth"
 
->>>>>>> 5e7640a (version-1.1)
 
     # 形成训练数据，例如12345789 12-3456789
     def split_data(self, data, timestep, feature_size):
         dataX = []  # 已知特征
         dataY = []  # 预测特征
-<<<<<<< HEAD
-        output_size = self.output_size
-        # 将整个窗口的数据保存到X中，将未来N天保存到Y中
-        if feature_size == 1:
-            for index in range(len(data) - timestep - output_size):
-                dataX.append(data[index: index + timestep][:, self.predata])  # 添加 [:,0] 切片
-                dataY.append(data[index + timestep:index + timestep + output_size][:, self.predata])  # 添加预测列
-        else:
-            for index in range(len(data) - timestep - output_size):
-                dataX.append(data[index: index + timestep])
-                dataY.append(data[index + timestep:index + timestep + output_size][:, self.predata])
-=======
         output_size = self.config.output_size
         # 将整个窗口的数据保存到X中，将未来N天保存到Y中
         if feature_size == 1:
@@ -131,7 +85,6 @@ class Exp:
             for index in range(len(data) - timestep - output_size):
                 dataX.append(data[index: index + timestep])
                 dataY.append(data[index + timestep:index + timestep + output_size][:, self.config.predata_column])
->>>>>>> 5e7640a (version-1.1)
 
         dataX = np.array(dataX)
         dataY = np.array(dataY)
@@ -151,26 +104,15 @@ class Exp:
 
 
     def dataload(self):
-<<<<<<< HEAD
-        df = pd.read_csv(self.data_path, index_col=0)
-=======
         df = pd.read_csv(self.config.data_path, index_col=0)
->>>>>>> 5e7640a (version-1.1)
         print(df.head(5))
         df = np.array(df)
         # 将数据进行归一化
         scaler_model = self.scale
-<<<<<<< HEAD
-        scaler_model.fit_transform(np.array(df[:, self.predata]).reshape(-1, 1))
-        scaler = CustomMinMaxScaler()
-        df_scale = scaler.fit_transform(df)
-        x_train, y_train, x_val, y_val, x_test, y_test = self.split_data(df_scale, self.timestep, self.feature_size)
-=======
         scaler_model.fit_transform(np.array(df[:, self.config.predata_column]).reshape(-1, 1))
         scaler = CustomMinMaxScaler()
         df_scale = scaler.fit_transform(df)
         x_train, y_train, x_val, y_val, x_test, y_test = self.split_data(df_scale, self.config.timestep, self.config.feature_size)
->>>>>>> 5e7640a (version-1.1)
 
         # 将数据转为tensor
         x_train_tensor = torch.from_numpy(x_train).to(torch.float32).to(self.device)
@@ -191,15 +133,6 @@ class Exp:
 
         # 将数据加载成迭代器
         train_loader = torch.utils.data.DataLoader(train_data,
-<<<<<<< HEAD
-                                                   self.batch_size,
-                                                   False)
-        vali_loader = torch.utils.data.DataLoader(vali_data,
-                                                  self.batch_size,
-                                                  False)
-        test_loader = torch.utils.data.DataLoader(test_data,
-                                                  self.batch_size,
-=======
                                                    self.config.batch_size,
                                                    False)
         vali_loader = torch.utils.data.DataLoader(vali_data,
@@ -207,7 +140,6 @@ class Exp:
                                                   False)
         test_loader = torch.utils.data.DataLoader(test_data,
                                                   self.config.batch_size,
->>>>>>> 5e7640a (version-1.1)
                                                   False)
         return train_loader, vali_loader, test_loader
 
@@ -215,28 +147,6 @@ class Exp:
         model_params = {
             "LSTM": {
                 "model_name": "LSTM",
-<<<<<<< HEAD
-                "model": mymodel.LSTM(self.feature_size, self.hidden_size, self.num_layers, self.output_size)
-            },
-            "GRU": {
-                "model_name": "GRU",
-                "model": mymodel.GRU(self.feature_size, self.hidden_size, self.num_layers, self.output_size)
-            },
-            "CNNGRU": {
-                "model_name": "CNN-GRU",
-                "model": mymodel.CNNGRU(self.feature_size, self.out_channel, self.hidden_size, self.num_layers,
-                                        self.kernel_size, self.output_size)
-            },
-            "DAR": {
-                "model_name": "DAR",
-                "model": mymodel.DAR(self.feature_size, self.num_channels, self.dilation,
-                                     self.kernel_size, self.output_size)
-            },
-            "TCN": {
-                "model_name": "TCN",
-                "model": mymodel.TCN(self.feature_size, self.output_size, self.num_channels, self.kernel_size,
-                                     self.dropout)
-=======
                 "model": mymodel.LSTM(self.config.feature_size, self.config.hidden_size, self.config.num_layers, self.config.output_size)
             },
             "GRU": {
@@ -257,7 +167,6 @@ class Exp:
                 "model_name": "TCN",
                 "model": mymodel.TCN(self.config.feature_size, self.config.output_size, self.config.num_channels, self.config.kernel_size,
                                      self.config.dropout)
->>>>>>> 5e7640a (version-1.1)
             },
         }
 
@@ -272,65 +181,6 @@ class Exp:
 
     # 模型训练
     def train(self):
-<<<<<<< HEAD
-        early_stopping = EarlyStopping(patience=self.patience, verbose=True)
-        model = self.model
-        optimizer = torch.optim.AdamW(model.parameters(), lr=self.learning_rate)  # 定义优化器
-        loss_function = nn.MSELoss().to(self.device)  # 定义损失函数
-        # 定义余弦退火学习率调度器
-        scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.epochs // 2)
-
-        train_loader, vali_loader, test_loader = self.dataload()
-        self.loss_save1 = []
-        self.loss_save2 = []
-        self.loss_save3 = []
-        #设定时间
-        self.time = time.time()
-        for epoch in range(self.epochs):
-            model.train()
-            running_loss = 0
-            for x_train, y_train in train_loader:
-                optimizer.zero_grad()
-                y_train_pred = model(x_train)
-                loss = loss_function(y_train_pred, y_train)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item()
-            train_loss = running_loss / len(train_loader)
-            self.loss_save1.append(train_loss)
-            # 模型验证
-            model.eval()
-            with torch.no_grad():
-                running_loss1 = 0
-                for x_val, y_val in vali_loader:
-                    y_val_pred = model(x_val)
-                    loss = loss_function(y_val_pred, y_val)
-                    running_loss1 += loss.item()
-                vali_loss = np.average(running_loss1)
-                self.loss_save2.append(vali_loss)
-                # 模型测试
-                running_loss2 = 0
-
-                for x_test, y_test in test_loader:
-                    y_test_pred = model(x_test)
-                    loss = loss_function(y_test_pred, y_test)
-                    running_loss2 += loss.item()
-                test_loss = np.average(running_loss2)
-                self.loss_save3.append(test_loss)
-            print("train epoch[{}/{}] loss:%.3f,%.3f,%.3f".format(epoch, self.epochs, ) % (
-                train_loss, vali_loss, test_loss))
-
-            early_stopping(vali_loss, self.model, self.save_path)
-            if early_stopping.early_stop:  # 判断是否需要停止
-                print("Early stopping")
-                break
-            if early_stopping.counter >= 5:
-                scheduler.step()
-                last_lr = str(scheduler.get_last_lr())
-                print('change learning rate:' + last_lr)
-        print('Finished Training')
-        self.time = time.time() - self.time
-=======
         try:
             early_stopping = EarlyStopping(patience=self.config.patience, verbose=True)
             model = self.model
@@ -411,18 +261,13 @@ class Exp:
             print('Finished Training')
             self.time = time.time() - self.time
             
->>>>>>> 5e7640a (version-1.1)
         return model
 
     def paint(self):
         model = self.model
         model.load_state_dict(torch.load(self.save_path))
         model.eval()
-<<<<<<< HEAD
-        plot_size = self.plotsize
-=======
         plot_size = 500
->>>>>>> 5e7640a (version-1.1)
         scaler = self.scale
         x_train_tensor = self.x_train_tensor
         y_train_tensor = self.y_train_tensor
@@ -460,7 +305,7 @@ class Exp:
 
         plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
         plt.rcParams.update({'font.size': 14})
-        fig, axs = plt.subplots(2, 1, figsize=(9, 7))
+        fig, axs = plt.subplots(2, 1, figsize=(8, 7))
         axs[0].set_title("模型训练结果")
         sns.lineplot(data=y_test_pred_display[:, -1], label='预测值', ax=axs[0])
         sns.lineplot(data=y_test_actual_display[:, -1], label='真实值', ax=axs[0])
@@ -486,21 +331,12 @@ class Exp:
         axs[1].text(min_val_loss_idx - 0.5, min_val_loss, f'验证集最小损失值 ({min_val_loss:.4f})',
                     fontsize=12, verticalalignment='bottom', bbox=dict(facecolor='white', alpha=0.6, edgecolor='black'))
 
-<<<<<<< HEAD
-        hyperparameter_text = f'num_channels: {self.num_channels}\n' \
-                              f'output size: {self.output_size}\n' \
-                              f'kernel size: {self.kernel_size}\n' \
-                              f'timestep: {self.timestep}\n' \
-                              f'epochs: {self.epochs}\n' \
-                              f'dilation: {self.dilation}'
-=======
         hyperparameter_text = f'num_channels: {self.config.num_channels}\n' \
                               f'output size: {self.config.output_size}\n' \
                               f'kernel size: {self.config.kernel_size}\n' \
                               f'timestep: {self.config.timestep}\n' \
                               f'epochs: {self.config.epochs}\n' \
                               f'dilation: {self.config.dilation}'
->>>>>>> 5e7640a (version-1.1)
 
         #axs[1].text(0.4, 0, hyperparameter_text, transform=axs[1].transAxes,
         #fontsize=12, verticalalignment='center', bbox=dict(facecolor='none', edgecolor='gray'))
@@ -532,8 +368,4 @@ class Exp:
             np.save('algorithm/deeplearning/result/pre&loss/+1%s %.3f.npy' % (self.model_name, r_squared), y_test)
             np.save('algorithm/deeplearning/result/loss/+1%s %.3f.npy' % (self.model_name, r_squared), [train_losses, val_losses, test_losses])
 
-<<<<<<< HEAD
         return 'algorithm/deeplearning/result/pic/%s %.3f %.3f %.3f.png' % (self.model_name, sme, mape.item(), r_squared)
-=======
-        return 'algorithm/deeplearning/result/pic/%s %.3f %.3f %.3f.png' % (self.model_name, sme, mape.item(), r_squared)
->>>>>>> 5e7640a (version-1.1)
