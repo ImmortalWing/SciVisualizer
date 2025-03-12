@@ -157,6 +157,7 @@ class ELMPage(QWidget):
     def _connect_signals(self):
         self.open_btn.clicked.connect(self._open_file_dialog)
         self.load_btn.clicked.connect(self._load_dataset)
+        self.demo_btn.clicked.connect(self._run_demo)
         self.dataLoaded.connect(self._update_ui)
 
     def _open_file_dialog(self):

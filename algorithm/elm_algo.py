@@ -32,3 +32,9 @@ class ELM:
     def score(self, X, y):
         y_pred = self.predict(X)
         return np.sqrt(np.mean((y_pred - y)**2))
+
+    def generate_example_data(self, n_samples=200):
+        """生成带噪声的正弦波示例数据"""
+        X = np.linspace(-10, 10, n_samples)[:, None]
+        y = np.sin(X).ravel() + np.random.normal(0, 0.1, n_samples)
+        return X, y
