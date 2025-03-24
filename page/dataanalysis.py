@@ -70,13 +70,17 @@ class Page0(QWidget):
         self.horizontalLayout1.setObjectName(u"horizontalLayout1")
         self.verticalLayout.addLayout(self.horizontalLayout1)
         self.textedit = QTextEdit(self)
-        # self.textedit.setMinimumSize(0, 500)
         self.tableView = QTableView(self)
         self.graphicsView = QGraphicsView(self)
 
-        self.horizontalLayout1.addWidget(self.textedit)
+        # 将垂直布局包裹textedit和tableView
+        self.verticalTextAndTable = QVBoxLayout()
+        self.verticalTextAndTable.addWidget(self.textedit)
+        self.verticalTextAndTable.addWidget(self.tableView)
+
+        # 将垂直布局与graphicsView并排显示
+        self.horizontalLayout1.addLayout(self.verticalTextAndTable)
         self.horizontalLayout1.addWidget(self.graphicsView)
-        self.horizontalLayout1.addWidget(self.tableView)
 
         self.horizontalLayout2 = QHBoxLayout()
         self.horizontalLayout2.setObjectName(u"horizontalLayout2")
@@ -116,9 +120,31 @@ class Page1(Page0):
         self.connection()
 
     def calds(self):
-        ds = str(algo.calds(self.df))
-        # 绘图 柱状图
-        self.textedit.setText(ds)
+        ds_data = algo.calds(self.df)
+
+        # 新增数据处理逻辑
+        ds_data.set_index('名称', inplace=True)
+        transposed = ds_data.T
+
+        # 更新图表绘制部分为折线图
+        self.sc = MplCanvas(self, width=6, height=5)
+        for column in transposed.columns:
+            self.sc.axes.plot(transposed.index, transposed[column], label=column)
+        self.sc.axes.set_title('D-S证据理论结果')
+        self.sc.axes.set_xlabel('类别')
+        self.sc.axes.set_ylabel('置信度')
+        self.sc.axes.legend()
+
+        # 确保 graphicsView 设置场景并显示折线图
+        self.graphic_scene = QGraphicsScene()
+        self.graphic_scene.addWidget(self.sc)
+        self.graphicsView.setScene(self.graphic_scene)
+        self.graphicsView.show()
+
+        # 保留原有表格和文本显示逻辑
+        pandasmodel = pandasModel(ds_data)
+        self.tableView.setModel(pandasmodel)
+        self.textedit.setText(f"D-S计算结果：\n{ds_data.to_string()}")
 
     def connection(self):
         self.readfilebtn.clicked.connect(lambda: self.calds())
@@ -202,5 +228,10 @@ class pandasModel(QAbstractTableModel):
 class MplCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=6, height=5, dpi=100):
         fig = plt.Figure(figsize=(width, height), dpi=dpi)
+         # 设置字体
+        plt.rcParams['font.family'] = ['Times New Roman', 'SimSun']
+        plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+        
         self.axes = fig.add_subplot(111)  # 添加子图
         super(MplCanvas, self).__init__(fig)
+

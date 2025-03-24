@@ -6,8 +6,9 @@ class SignalBus(QObject):
     """ Signal bus """
 
     switchToSampleCard = Signal(str, int)
-    micaEnableChanged = Signal(bool)
-    supportSignal = Signal()
+    # 移除了未使用的信号
+    # micaEnableChanged = Signal(bool)
+    # supportSignal = Signal()
 
 
 signalBus = SignalBus()

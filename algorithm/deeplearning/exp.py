@@ -180,7 +180,13 @@ class Exp:
         self.save_path = 'algorithm/deeplearning/result/model/{}.pth'.format(self.model_name)
 
     # 模型训练
-    def train(self):
+    def train(self, stop_check_fn=None):
+        """训练模型
+        
+        参数:
+            stop_check_fn (callable, 可选): 一个检查函数，用于外部控制是否中断训练过程。
+                                         如果函数返回True，则中断训练。
+        """
         try:
             early_stopping = EarlyStopping(patience=self.config.patience, verbose=True)
             model = self.model
@@ -195,10 +201,24 @@ class Exp:
             self.time = time.time()
             
             for epoch in range(self.config.epochs):
+                # 检查是否应该中断训练
+                if stop_check_fn and stop_check_fn():
+                    print(f"训练在第 {epoch+1} 个 epoch 被中断")
+                    # 确保保存当前模型
+                    torch.save(model.state_dict(), self.save_path)
+                    return
+                
                 model.train()
                 running_loss = 0
                 
                 for batch_idx, (x_train, y_train) in enumerate(train_loader):
+                    # 在每个批次之后检查中断
+                    if stop_check_fn and batch_idx % 5 == 0 and stop_check_fn():
+                        print(f"训练在第 {epoch+1} 个 epoch 的第 {batch_idx+1} 个批次被中断")
+                        # 确保保存当前模型
+                        torch.save(model.state_dict(), self.save_path)
+                        return
+                        
                     try:
                         optimizer.zero_grad()
                         y_train_pred = model(x_train)
@@ -303,8 +323,13 @@ class Exp:
         # print(smape)
         print(f'r2{r_squared}')
 
-        plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+        # 设置字体为Times New Roman和宋体
+        plt.rcParams['font.family'] = ['Times New Roman', 'SimSun']
+        plt.rcParams['font.serif'] = ['Times New Roman']  # 英文衬线字体
+        plt.rcParams['font.sans-serif'] = ['SimSun']  # 中文字体
+        plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
         plt.rcParams.update({'font.size': 14})
+        
         fig, axs = plt.subplots(2, 1, figsize=(8, 7))
         axs[0].set_title("模型训练结果")
         sns.lineplot(data=y_test_pred_display[:, -1], label='预测值', ax=axs[0])

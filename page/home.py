@@ -7,13 +7,6 @@ from PySide6.QtGui import QPixmap, QFont
 from PySide6.QtCore import Qt, QSize
 
 STYLESHEET = """
-    /* 主容器样式 - 现代渐变背景 */
-    HomePage {
-        background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-            stop:0 #f8f9fa, stop:1 #ffffff);
-        padding: 40px;
-        border: none;
-    }
     
     /* 标题样式 - 增加字距 */
     .title {
@@ -108,8 +101,8 @@ class HomePage(QFrame):
     def setup_ui(self):
         # 主布局
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(40, 40, 40, 40)
-        main_layout.setSpacing(25)
+        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout.setSpacing(20)
         
         # 顶部区域
         self.create_header(main_layout)

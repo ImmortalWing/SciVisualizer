@@ -1,12 +1,12 @@
 /* 全局样式表 */
 
 QTextEdit {
-    font-size: 16px;
+    font-size: 18px;
     font-family: "Microsoft YaHei", "SimSun", sans-serif;
 }
 
 QTableView {
-    font-size: 14px;
+    font-size: 16px;
     font-family: "Microsoft YaHei", "SimSun", sans-serif;
 }
 

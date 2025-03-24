@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg,NavigationToolbar2QT
 from matplotlib import pyplot as plt
 from qfluentwidgets import (
     Action,
@@ -113,9 +113,14 @@ class TrainingWorker(QObject):
             sys.stdout = progress_capture
             
             try:
-                self.exp.train()
-                resultpath = self.exp.paint()
-                self.result_ready.emit(resultpath)
+                # 传递停止检查函数给训练过程
+                self.exp.train(stop_check_fn=self.should_stop)
+                # 如果训练未被中断，则生成结果图
+                if self._is_running:
+                    resultpath = self.exp.paint()
+                    self.result_ready.emit(resultpath)
+                else:
+                    print("训练已被用户中断，跳过结果生成阶段")
             finally:
                 # 恢复原始stdout
                 sys.stdout = original_stdout
@@ -124,9 +129,15 @@ class TrainingWorker(QObject):
             self.error.emit(f"Training error: {str(e)}\n{traceback.format_exc()}")
         finally:
             self.finished.emit()
+    
+    def should_stop(self):
+        """检查是否应该停止训练"""
+        return not self._is_running
             
     def stop(self):
+        """设置停止标志并通知"""
         self._is_running = False
+        print("\n正在安全停止训练过程，请稍候...")
 
 class DeepLearningPage(QWidget):
     def __init__(self, text: str, parent=None):
@@ -316,17 +327,25 @@ class DeepLearningPage(QWidget):
         self.resultLayout = QVBoxLayout(self.resultCard)
         self.resultLabel = QLabel("训练结果")
         self.resultLabel.setAlignment(Qt.AlignCenter)
-        self.graphicsView = ImageLabel(self)
+        
+        # 创建 Matplotlib 图形和工具栏
+        self.figure, self.ax = plt.subplots(figsize=(8, 6), dpi=100)  # 增加图形大小和分辨率
+        self.canvas = FigureCanvasQTAgg(self.figure)
+        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # 允许画布扩展
+        self.toolbar = NavigationToolbar2QT(self.canvas, self)
+        
+        # 替换原有的 ImageLabel 为 Matplotlib 图形和工具栏
         self.resultLayout.addWidget(self.resultLabel)
-        self.resultLayout.addWidget(self.graphicsView)
+        self.resultLayout.addWidget(self.toolbar)
+        self.resultLayout.addWidget(self.canvas, 1)  # 添加拉伸因子使画布占用更多空间
         
         # 添加各个区域到分割器
         self.splitter.addWidget(self.tableCard)
         self.splitter.addWidget(self.logCard)
         self.splitter.addWidget(self.resultCard)
         
-        # 设置初始分割比例
-        self.splitter.setSizes([300, 300, 300])
+        # 设置初始分割比例 - 给结果区域更多空间
+        self.splitter.setSizes([250, 250, 500])
         
         # 添加分割器到主布局
         self.mainLayout.addWidget(self.splitter, 1)  # 1表示拉伸因子
@@ -493,60 +512,145 @@ class DeepLearningPage(QWidget):
             # 如果无法解析进度，则忽略
 
     def _handle_training_result(self, resultpath):
-        self.graphicsView.setImage(resultpath)
+        """处理训练结果并更新图形"""
+        # 清空当前图形
+        self.ax.clear()
+        
+        # 加载并显示结果图像
+        img = plt.imread(resultpath)
+        self.ax.imshow(img)
+        self.ax.axis('off')  # 隐藏坐标轴
+        self.figure.tight_layout()  # 优化图形布局，减少边距
+        
+        # 更新画布
+        self.canvas.draw()
+        
+        # 清理训练状态
         self._cleanup_training()
         
         # 显示训练完成通知
         self.show_info_bar('训练完成', '模型训练已成功完成', 'success')
 
     def _handle_training_error(self, error):
+        """处理训练过程中的错误"""
         print(error)
+        
+        # 清理训练状态
         self._cleanup_training()
         
+        # 尝试显示部分训练结果
+        self._display_partial_results()
+        
         # 显示错误通知
-        self.show_info_bar('训练错误', '训练过程中发生错误', 'error')
+        self.show_info_bar('训练错误', '训练过程中发生错误，已显示部分结果', 'error', 4000)
 
-    def _cleanup_training(self):
+    def _cleanup_training(self, stopped=False):
+        """清理训练相关资源
+        
+        参数:
+            stopped (bool): 是否是由用户手动停止的训练
+        """
         # 恢复stdout并重置UI状态
-        sys.stdout = self.old_stdout
+        if hasattr(self, 'old_stdout'):
+            sys.stdout = self.old_stdout
+            
         self.trainbtn.setEnabled(True)
         self.trainbtn.setText('训练')
         self.stopbtn.setEnabled(False)
+        self.stopbtn.setText('停止训练')
         
-        # 设置进度条为完成状态
-        self.progressBar.setValue(100)
-        self.progressBar.setFormat("训练完成")
+        # 设置进度条状态
+        if stopped:
+            self.progressBar.setFormat("训练已停止")
+        else:
+            self.progressBar.setValue(100)
+            self.progressBar.setFormat("训练完成")
         
         # 清理线程和worker
         if hasattr(self, 'thread'):
-            self.thread.quit()
-            self.thread.wait()
+            # 确保线程已经退出
+            if self.thread.isRunning():
+                self.thread.quit()
+                self.thread.wait(2000)  # 等待最多2秒
             del self.thread
+            
         if hasattr(self, 'worker'):
             del self.worker
+            
+        # 显示停止通知
+        if stopped:
+            print("训练已被用户终止")
 
     def stop_training(self):
         """停止正在进行的训练任务"""
-        if hasattr(self, 'worker'):
-            self.worker.stop()  # 触发停止标志
-            print("\n训练被用户停止!")
+        if not hasattr(self, 'worker') or not hasattr(self, 'thread'):
+            return
             
-        # 立即清理资源
-        self._cleanup_training()
-        
-        # 设置进度条为停止状态
-        self.progressBar.setFormat("训练已停止")
-        
-        # 强制终止线程
-        if hasattr(self, 'thread') and self.thread.isRunning():
-            self.thread.terminate()
+        if not self.thread.isRunning():
+            self.show_info_bar('无需操作', '当前没有正在进行的训练任务', 'info')
+            return
             
-        # 显示停止通知
-        self.show_info_bar('训练已停止', '训练过程已被用户终止', 'warning')
+        # 更新UI
+        self.stopbtn.setEnabled(False)
+        self.stopbtn.setText('正在停止...')
+        self.progressBar.setFormat("正在安全停止训练...")
+        
+        # 通知用户
+        self.show_info_bar('停止中', '正在安全停止训练，请稍候...', 'warning', 3000)
+        
+        # 设置停止标志
+        self.worker.stop()
+        
+        # 等待线程自然结束
+        QApplication.processEvents()  # 确保UI更新
+        
+        # 设置超时机制以防止无限等待
+        stop_timeout = 5000  # 5秒超时
+        if not self.thread.wait(stop_timeout):
+            print("警告: 训练线程未在预期时间内停止")
+            self.show_info_bar('警告', '训练线程未能及时响应停止命令', 'warning')
+            # 在这里我们不使用terminate()，而是继续等待线程自然结束
+        
+        # 清理资源
+        self._cleanup_training(stopped=True)
+        
+        # 尝试显示部分训练结果（如果有）
+        self._display_partial_results()
+
+    def _display_partial_results(self):
+        """显示部分训练结果，即使在训练被中断的情况下"""
+        if hasattr(self, 'exp') and hasattr(self.exp, 'loss_save1') and len(self.exp.loss_save1) > 0:
+            # 清空当前图形
+            self.ax.clear()
+            
+            # 创建部分训练结果的可视化
+            epochs = range(1, len(self.exp.loss_save1) + 1)
+            
+            # 绘制训练和验证损失曲线
+            self.ax.plot(epochs, self.exp.loss_save1, 'b-', label='训练损失')
+            if hasattr(self.exp, 'loss_save2') and len(self.exp.loss_save2) > 0:
+                self.ax.plot(epochs, self.exp.loss_save2, 'r-', label='验证损失')
+                
+            # 添加标题和标签
+            self.ax.set_title(f'{self.setmodelcomboBox.currentText()}模型训练过程 (中断于第{len(epochs)}个轮次)', fontproperties='SimHei')
+            self.ax.set_xlabel('轮次 (Epoch)')
+            self.ax.set_ylabel('损失 (Loss)')
+            self.ax.legend()
+            self.ax.grid(True)
+            
+            # 更新画布
+            self.figure.tight_layout()
+            self.canvas.draw()
+            
+            print(f"已显示中断前的{len(epochs)}个训练轮次的损失曲线")
 
     def cleanimage(self):
-        self.graphicsView.setImage()
-        self.show_info_bar('图像已清除', '结果图像已被清除', 'info')
+        # 修正方法，使用 Matplotlib 图形而不是旧的 GraphicsView
+        if hasattr(self, 'ax'):
+            self.ax.clear()
+            self.ax.set_axis_off()
+            self.canvas.draw()
+            self.show_info_bar('图像已清除', '结果图像已被清除', 'info')
 
     def showCommandBar(self):
         view = CommandBarView(self)

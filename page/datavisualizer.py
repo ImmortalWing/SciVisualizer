@@ -5,15 +5,18 @@ from PySide6.QtWidgets import QApplication, QWidget, QStackedWidget, QVBoxLayout
 
 from qfluentwidgets import Pivot, setTheme, Theme, SegmentedWidget, FluentIcon, PushButton,ComboBox,InfoBar,InfoBarPosition
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg,NavigationToolbar2QT
 from config.database import execute_query
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.font_manager as fm
 
-# 添加字体设置
+# 添加字体设置 - 优先使用 Times New Roman 和宋体
 plt.rcParams['font.family'] = ['Times New Roman', 'SimSun']
+# 分别设置英文和中文字体
+plt.rcParams['font.serif'] = ['Times New Roman']  # 英文衬线字体
+plt.rcParams['font.sans-serif'] = ['SimSun']  # 中文字体
 # 解决中文显示问题
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
@@ -178,11 +181,32 @@ class BasePage(QWidget):
             self.tableView.resizeColumnsToContents()
     
     def create_canvas(self, width=8, height=6):
-        """创建画布并添加到图形视图"""
+        """创建画布并添加到图形视图，同时添加 NavigationToolbar2QT"""
+        # 移除旧的工具栏和画布
+        if hasattr(self, 'toolbar'):
+            self.verticalLayout.removeWidget(self.toolbar)
+            self.toolbar.close()
+            del self.toolbar
+            self.toolbar = None  # 显式设置为None
+            
+        if hasattr(self, 'canvas'):
+            if self.graphic_scene is not None:  # 添加graphic_scene非空检查
+                self.graphic_scene.removeItem(self.canvas)
+            del self.canvas
+            self.canvas = None  # 显式设置为None
+
+        # 创建新画布和工具栏
         self.canvas = MplCanvas(self, width=width, height=height)
-        self.graphic_scene = QGraphicsScene()
+        self.toolbar = NavigationToolbar2QT(self.canvas, self)
+
+        # 将画布添加到场景
+        if self.graphic_scene is None:
+            self.graphic_scene = QGraphicsScene()
+            self.graphicsView.setScene(self.graphic_scene)
         self.graphic_scene.addWidget(self.canvas)
-        self.graphicsView.setScene(self.graphic_scene)
+
+        # 将工具栏添加到布局顶部
+        self.verticalLayout.insertWidget(0, self.toolbar)
         self.graphicsView.show()
         return self.canvas
     
@@ -293,7 +317,7 @@ class ChartPage(BasePage):
         try:
             chart_type = self.chart_type.currentText()
             
-            # 创建画布
+            # 创建画布（已包含工具栏）
             canvas = self.create_canvas()
             
             # 设置美观的样式
@@ -301,8 +325,7 @@ class ChartPage(BasePage):
             
             # 根据图表类型绘制
             if chart_type == "折线图":
-                # 对每个数值列绘制折线图
-                numeric_cols = self.df.select_dtypes(include=np.number).columns[:5]  # 限制为前5列
+                numeric_cols = self.df.select_dtypes(include=np.number).columns[:5]
                 if len(numeric_cols) == 0:
                     self.show_message("错误", "没有数值列可以绘制折线图")
                     return
@@ -316,20 +339,17 @@ class ChartPage(BasePage):
                 canvas.axes.legend()
                 
             elif chart_type == "柱状图":
-                # 获取一些数值列
-                numeric_cols = self.df.select_dtypes(include=np.number).columns[:5]  # 限制为前5列
+                numeric_cols = self.df.select_dtypes(include=np.number).columns[:5]
                 if len(numeric_cols) == 0:
                     self.show_message("错误", "没有数值列可以绘制柱状图")
                     return
                 
-                # 使用第一列数据绘制柱状图
                 sns.barplot(x=self.df.index[:20], y=self.df[numeric_cols[0]][:20], ax=canvas.axes)
                 canvas.axes.set_title(f"{numeric_cols[0]} 柱状图")
                 canvas.axes.set_xlabel("索引")
                 canvas.axes.set_ylabel(numeric_cols[0])
                 
             elif chart_type == "散点图":
-                # 获取前两个数值列绘制散点图
                 numeric_cols = self.df.select_dtypes(include=np.number).columns
                 if len(numeric_cols) < 2:
                     self.show_message("错误", "至少需要两个数值列才能绘制散点图")
@@ -341,27 +361,22 @@ class ChartPage(BasePage):
                 canvas.axes.set_ylabel(numeric_cols[1])
                 
             elif chart_type == "饼图":
-                # 选择一个分类列做饼图
                 categorical_cols = self.df.select_dtypes(include=['object', 'category']).columns
                 if len(categorical_cols) == 0:
-                    # 如果没有分类列，使用第一个数值列
                     numeric_cols = self.df.select_dtypes(include=np.number).columns
                     if len(numeric_cols) == 0:
                         self.show_message("错误", "没有合适的列可以绘制饼图")
                         return
                     
-                    # 对数值列进行分组统计
-                    value_counts = self.df[numeric_cols[0]].value_counts()[:10]  # 限制为前10个值
+                    value_counts = self.df[numeric_cols[0]].value_counts()[:10]
                 else:
-                    # 使用第一个分类列
-                    value_counts = self.df[categorical_cols[0]].value_counts()[:10]  # 限制为前10个类别
+                    value_counts = self.df[categorical_cols[0]].value_counts()[:10]
 
                 value_counts.plot.pie(autopct='%1.1f%%', ax=canvas.axes)
                 canvas.axes.set_title("饼图")
                 canvas.axes.set_ylabel("")
                 
             elif chart_type == "热力图":
-                # 计算相关性矩阵
                 numeric_df = self.df.select_dtypes(include=np.number)
                 if numeric_df.shape[1] < 2:
                     self.show_message("错误", "至少需要两个数值列才能绘制热力图")
@@ -372,26 +387,22 @@ class ChartPage(BasePage):
                 canvas.axes.set_title("相关性热力图")
                 
             elif chart_type == "箱线图":
-                # 获取数值列
-                numeric_cols = self.df.select_dtypes(include=np.number).columns[:5]  # 限制为前5列
+                numeric_cols = self.df.select_dtypes(include=np.number).columns[:5]
                 if len(numeric_cols) == 0:
                     self.show_message("错误", "没有数值列可以绘制箱线图")
                     return
                 
-                # 绘制箱线图
                 sns.boxplot(data=self.df[numeric_cols], ax=canvas.axes)
                 canvas.axes.set_title("箱线图")
                 canvas.axes.set_xlabel("特征")
                 canvas.axes.set_ylabel("值")
                 
             elif chart_type == "小提琴图":
-                # 获取数值列
-                numeric_cols = self.df.select_dtypes(include=np.number).columns[:3]  # 限制为前3列
+                numeric_cols = self.df.select_dtypes(include=np.number).columns[:3]
                 if len(numeric_cols) == 0:
                     self.show_message("错误", "没有数值列可以绘制小提琴图")
                     return
                 
-                # 绘制小提琴图
                 sns.violinplot(data=self.df[numeric_cols], ax=canvas.axes)
                 canvas.axes.set_title("小提琴图")
                 canvas.axes.set_xlabel("特征")
@@ -455,7 +466,6 @@ class StatisticsPage(BasePage):
             return
             
         try:
-            # 创建一个摘要文本
             summary = (f"数据摘要:\n\n"
                      f"形状: {self.df.shape[0]}行 x {self.df.shape[1]}列\n\n"
                      f"列名: {', '.join(self.df.columns.tolist())}\n\n"
@@ -463,25 +473,19 @@ class StatisticsPage(BasePage):
                      f"缺失值统计:\n{self.df.isnull().sum().to_string()}\n\n"
                      f"数值型列统计:\n{self.df.describe().to_string()}\n\n")
             
-            # 显示在文本区域
             self.textedit.setText(summary)
             
-            # 创建画布显示数据类型分布
             canvas = self.create_canvas()
             
-            # 统计各类型列数
             dtype_counts = self.df.dtypes.map(lambda x: x.name).value_counts()
             
-            # 绘制类型分布饼图
             dtype_counts.plot.pie(autopct='%1.1f%%', ax=canvas.axes)
             canvas.axes.set_title("数据类型分布")
             canvas.axes.set_ylabel("")
             
-            # 调整布局并绘制
             canvas.figure.tight_layout()
             canvas.draw()
             
-            # 显示描述统计表格
             self.display_dataframe(self.df.describe().T)
             
         except Exception as e:
@@ -494,31 +498,24 @@ class StatisticsPage(BasePage):
             return
             
         try:
-            # 获取数值列进行相关性分析
             numeric_df = self.df.select_dtypes(include=np.number)
             
             if numeric_df.shape[1] < 2:
                 self.show_message("错误", "至少需要两个数值列才能进行相关性分析")
                 return
             
-            # 计算相关性矩阵
             corr = numeric_df.corr()
             
-            # 显示相关性表格
             self.display_dataframe(corr)
             
-            # 创建画布显示热力图
             canvas = self.create_canvas()
             
-            # 绘制热力图
             sns.heatmap(corr, annot=True, cmap='coolwarm', ax=canvas.axes)
             canvas.axes.set_title("相关性热力图")
             
-            # 调整布局并绘制
             canvas.figure.tight_layout()
             canvas.draw()
             
-            # 找出高相关性变量
             high_corr = (corr.abs() > 0.7) & (corr.abs() < 1.0)
             high_corr_pairs = []
             
@@ -542,7 +539,6 @@ class StatisticsPage(BasePage):
             return
             
         try:
-            # 检查是否有分类列
             categorical_cols = self.df.select_dtypes(include=['object', 'category']).columns
             numeric_cols = self.df.select_dtypes(include=np.number).columns
             
@@ -550,30 +546,23 @@ class StatisticsPage(BasePage):
                 self.show_message("错误", "分组统计需要至少一个分类列和一个数值列")
                 return
             
-            # 使用第一个分类列和第一个数值列进行分组统计
             cat_col = categorical_cols[0]
             num_col = numeric_cols[0]
             
-            # 分组计算均值、计数和标准差
             group_stats = self.df.groupby(cat_col)[num_col].agg(['mean', 'count', 'std']).reset_index()
             
-            # 显示分组统计表格
             self.display_dataframe(group_stats)
             
-            # 创建画布
             canvas = self.create_canvas()
             
-            # 绘制分组柱状图
             sns.barplot(x=cat_col, y=num_col, data=self.df, ax=canvas.axes)
             canvas.axes.set_title(f"{cat_col} 分组 {num_col} 均值")
             canvas.axes.set_xlabel(cat_col)
             canvas.axes.set_ylabel(f"{num_col} 均值")
             
-            # 调整布局并绘制
             canvas.figure.tight_layout()
             canvas.draw()
             
-            # 显示文本说明
             self.textedit.setText(f"分组统计: {cat_col} → {num_col}\n\n"
                                f"分组总数: {group_stats.shape[0]}\n\n"
                                f"最大均值组: {group_stats.loc[group_stats['mean'].idxmax()][cat_col]} "
@@ -613,7 +602,7 @@ class PandasModel(QAbstractTableModel):
 
 class MplCanvas(FigureCanvasQTAgg):
     """Matplotlib画布包装器，用于在Qt中显示matplotlib图形"""
-    def __init__(self, parent=None, width=8, height=6, dpi=100):
+    def __init__(self, parent=None, width=4, height=4, dpi=100):
         plt.style.use('ggplot')  # 使用美观的样式
         
         # 设置字体

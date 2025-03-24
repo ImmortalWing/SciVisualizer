@@ -6,19 +6,15 @@ from PySide6.QtGui import QFont
 from setupmainwindow import Window
 
 def initialize_app():
+    """初始化应用程序"""
     app = QApplication(sys.argv)
-    
-    # 设置全局字体大小
-    font = QFont()
-    font.setPointSize(12)
-    app.setFont(font)
     
     # 加载样式表
     load_stylesheet(app)
-    
     return app
 
 def load_stylesheet(app):
+    """加载样式表"""
     style_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resource", "style.qss")
     try:
         if os.path.exists(style_file):
