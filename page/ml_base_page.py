@@ -100,4 +100,4 @@ class MLBasePage(QWidget):
     def process_data_file(self, file_path):
         """处理数据文件，子类需要重写此方法"""
         self.textedit.append(f"读取文件: {file_path}")
-        self.textedit.append("子类应实现数据处理逻辑") 
+        self.textedit.append("子类应实现数据处理逻辑")  # 子类需覆盖此方法

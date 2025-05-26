@@ -14,7 +14,7 @@ import matplotlib.font_manager as fm
 
 # 添加字体设置 - 优先使用 Times New Roman 和宋体
 plt.rcParams['font.family'] = ['Times New Roman', 'SimSun']
-# 分别设置英文和中文字体
+# 分别设置英文中和文字体
 plt.rcParams['font.serif'] = ['Times New Roman']  # 英文衬线字体
 plt.rcParams['font.sans-serif'] = ['SimSun']  # 中文字体
 # 解决中文显示问题
@@ -80,6 +80,7 @@ class BasePage(QWidget):
         super().__init__(parent=parent)
         self.df = None
         self.canvas = None
+        self.canvas_proxy = None  # 新增：保存QGraphicsProxyWidget引用
         self.graphic_scene = None
         
         # 创建基本布局
@@ -189,9 +190,14 @@ class BasePage(QWidget):
             del self.toolbar
             self.toolbar = None  # 显式设置为None
             
+        # 移除旧的画布代理项（关键修复）
+        if hasattr(self, 'canvas_proxy') and self.canvas_proxy is not None:
+            if self.graphic_scene is not None:
+                self.graphic_scene.removeItem(self.canvas_proxy)  # 移除QGraphicsItem类型的代理项
+            del self.canvas_proxy
+            self.canvas_proxy = None
+            
         if hasattr(self, 'canvas'):
-            if self.graphic_scene is not None:  # 添加graphic_scene非空检查
-                self.graphic_scene.removeItem(self.canvas)
             del self.canvas
             self.canvas = None  # 显式设置为None
 
@@ -199,11 +205,11 @@ class BasePage(QWidget):
         self.canvas = MplCanvas(self, width=width, height=height)
         self.toolbar = NavigationToolbar2QT(self.canvas, self)
 
-        # 将画布添加到场景
+        # 将画布添加到场景并保存代理项（关键修复）
         if self.graphic_scene is None:
             self.graphic_scene = QGraphicsScene()
             self.graphicsView.setScene(self.graphic_scene)
-        self.graphic_scene.addWidget(self.canvas)
+        self.canvas_proxy = self.graphic_scene.addWidget(self.canvas)  # 保存addWidget返回的QGraphicsProxyWidget
 
         # 将工具栏添加到布局顶部
         self.verticalLayout.insertWidget(0, self.toolbar)
